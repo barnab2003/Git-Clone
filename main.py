@@ -24,5 +24,8 @@ def main():
         sha = base.commit(sys.argv[2])
         print(f"Committed: {sha}")
 
+    elif command == "checkout":
+        base.checkout(sys.argv[2])
+
 if __name__ == "__main__":
     main()

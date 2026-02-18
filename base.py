@@ -77,3 +77,42 @@ def get_log():
                 break
         
         current_hash = parent_hash
+
+def checkout(commit_hash):
+    # 1. Read the Commit object
+    commit_data = data.get_object(commit_hash).decode()
+    
+    # 2. Find the Tree hash inside the commit
+    tree_sha = None
+    for line in commit_data.splitlines():
+        if line.startswith("tree "):
+            tree_sha = line.split(" ")[1]
+            break
+            
+    if not tree_sha:
+        print(f"Could not find tree for commit {commit_hash}")
+        return
+
+    # 3. Read the Tree object (which is our stored index content)
+    tree_data = data.get_object(tree_sha).decode()
+    
+    # The tree_data looks like: "hash filename\nhash filename"
+    # We ignore the header line (e.g., "tree 123")
+    lines = tree_data.splitlines()[1:] 
+
+    # 4. Restore the files
+    for line in lines:
+        if not line.strip(): continue
+        sha, filename = line.split(" ", 1)
+        
+        # Get the file content (blob) from the objects folder
+        blob_data = data.get_object(sha)
+        
+        # In our system, the blob data starts with a header like "blob 12\n"
+        # We need to skip that header to get the real content
+        _, real_content = blob_data.split(b"\n", 1)
+        
+        with open(filename, "wb") as f:
+            f.write(real_content)
+            
+    print(f"Checked out commit {commit_hash}. Files restored.")
